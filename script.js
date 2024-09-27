@@ -1,6 +1,6 @@
 import * as THREE from 'https://esm.sh/three@0.152.2';
 import { OrbitControls } from 'https://esm.sh/three@0.152.2/examples/jsm/controls/OrbitControls.js';
-import { createMethaneMolecule, createWaterMolecule, createAmmoniaMolecule, createCarbonDioxideMolecule, createNitrogenMolecule, createIsopropylAlcoholMolecule } from './molecules-list.js';
+import { createWaterMolecule, createAmmoniaMolecule, createMethaneMolecule, createCarbonDioxideMolecule, createNitrogenMolecule, createIsopropylAlcoholMolecule } from './molecules-list.js';
 import { initCameraControls } from './controls.js';
 import { initUIControls } from './ui.js';
 
@@ -21,12 +21,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.enablePan = false; // Панорамирование будет реализовано вручную
+    controls.enablePan = false;
 
-    // Уменьшаем минимальную дистанцию для большего приближения
     controls.minDistance = 0.5;  // Позволяет приближаться очень близко
-
-    // Максимальную дистанцию можно увеличить при необходимости
     controls.maxDistance = 200;  // Оставляем большее пространство для отдаления
 
     // Сетка и оси координат
@@ -76,11 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Управление камерой (панорамирование и вращение)
     initCameraControls(controls, renderer);
 
-    // Функции для получения текущей молекулы
-    function getCurrentMolecule() {
-        return currentMolecule;
-    }
-
     // Переменные для управления анимацией
     let isAnimating = true;
     let simulationSpeed = 1;
@@ -89,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function startAnimation() {
         if (!isAnimating) {
             isAnimating = true;
-            animate();
+            animate();  // Перезапуск анимации
         }
     }
 
@@ -124,8 +116,11 @@ document.addEventListener("DOMContentLoaded", function () {
             case 'N₂':
                 currentMolecule = createNitrogenMolecule();
                 break;
+            case 'isopropylAlcohol':
+                currentMolecule = createIsopropylAlcoholMolecule();
+                break;
             default:
-                currentMolecule = createWaterMolecule(); // По умолчанию - вода
+                currentMolecule = createWaterMolecule();
         }
 
         // Добавляем новую молекулу в сцену
@@ -134,37 +129,16 @@ document.addEventListener("DOMContentLoaded", function () {
         // Инициализируем вращение электронов для новой молекулы
         resetElectronRotations(currentMolecule);
 
-        // Перерисовываем сцену даже если анимация остановлена
+        // Перезапуск анимации после смены молекулы
+        if (!isAnimating) {
+            startAnimation();
+        }
+
         renderer.render(scene, camera);
     }
 
     // Инициализация UI (ползунки, кнопки)
-    initUIControls(getCurrentMolecule, setSimulationSpeed, startAnimation, stopAnimation);
-
-    // Обработчик изменения выбора молекулы
-    const moleculeSelect = document.getElementById('moleculeSelect');
-    if (moleculeSelect) {
-        moleculeSelect.addEventListener('change', (event) => {
-            changeMolecule(event.target.value);
-        });
-    } else {
-        console.error("Выпадающий список молекул не найден в DOM.");
-    }
-
-    // Обработчики для кнопок старта и остановки
-    const startButton = document.getElementById('startButton');
-    if (startButton) {
-        startButton.addEventListener('click', startAnimation);
-    } else {
-        console.error("Кнопка старта не найдена в DOM.");
-    }
-
-    const stopButton = document.getElementById('stopButton');
-    if (stopButton) {
-        stopButton.addEventListener('click', stopAnimation);
-    } else {
-        console.error("Кнопка остановки не найдена в DOM.");
-    }
+    initUIControls(() => currentMolecule, setSimulationSpeed, startAnimation, stopAnimation);
 
     // Функция анимации
     function animate() {
